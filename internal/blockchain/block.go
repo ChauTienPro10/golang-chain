@@ -7,18 +7,16 @@ import (
 )
 
 type Block struct {
-	Index        int           
-	Timestamp    int64         
-	Transactions []Transaction 
-	MerkleRoot   string         
-	PrevHash     string        
-	Nonce        int            
-	Hash         string         
+	Timestamp    int64
+	Transactions []Transaction
+	MerkleRoot   string
+	PrevHash     string
+	Nonce        int
+	Hash         string
 }
 
-func NewBlock(index int, timestamp int64, transactions []Transaction, prevHash string) *Block {
+func NewBlock(transactions []Transaction, prevHash string, timestamp int64) *Block {
 	block := &Block{
-		Index:        index,
 		Timestamp:    timestamp,
 		Transactions: transactions,
 		PrevHash:     prevHash,
@@ -30,7 +28,6 @@ func NewBlock(index int, timestamp int64, transactions []Transaction, prevHash s
 
 	return block
 }
-
 
 func CalculateMerkleRoot(txs []Transaction) string {
 	if len(txs) == 0 {
@@ -48,7 +45,7 @@ func CalculateMerkleRoot(txs []Transaction) string {
 				newHash := sha256.Sum256(concat)
 				newLevel = append(newLevel, newHash[:])
 			} else {
-				newLevel = append(newLevel, hashes[i]) 
+				newLevel = append(newLevel, hashes[i])
 			}
 		}
 		hashes = newLevel
@@ -57,7 +54,7 @@ func CalculateMerkleRoot(txs []Transaction) string {
 }
 
 func (b *Block) CalculateHash() string {
-	data := fmt.Sprintf("%d%d%s%s%d", b.Index, b.Timestamp, b.MerkleRoot, b.PrevHash, b.Nonce)
+	data := fmt.Sprintf("%d%d%s%s%d", b.Timestamp, b.MerkleRoot, b.PrevHash, b.Nonce)
 	hash := sha256.Sum256([]byte(data))
 	return hex.EncodeToString(hash[:])
 }

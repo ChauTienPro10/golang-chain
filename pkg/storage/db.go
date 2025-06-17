@@ -1,11 +1,14 @@
 package storage
 
 import (
-	"github.com/syndtr/goleveldb/leveldb"
-	"log"
 	"encoding/json"
+	"fmt"
+	"log"
+	"strings"
 
 	"github.com/chauduongphattien/golang-chain/internal/blockchain"
+	"github.com/chauduongphattien/golang-chain/internal/network"
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 type Storage struct {
@@ -32,7 +35,6 @@ func (s *Storage) Close() {
 	s.db.Close()
 }
 
-
 func (s *Storage) SaveBlock(block *blockchain.Block) error {
 	data, err := json.Marshal(block)
 	if err != nil {
@@ -42,7 +44,7 @@ func (s *Storage) SaveBlock(block *blockchain.Block) error {
 	if err := s.db.Put([]byte(blockKey), data, nil); err != nil {
 		return err
 	}
-	return s.db.Put([]byte("last_hash"), []byte(block.Hash), nil)
+	return s.db.Put([]byte("last_block_hash"), []byte(block.Hash), nil)
 }
 
 func (s *Storage) LoadBlock(hash string) (*blockchain.Block, error) {
@@ -55,6 +57,69 @@ func (s *Storage) LoadBlock(hash string) (*blockchain.Block, error) {
 	if err != nil {
 		return nil, err
 	}
+	return &block, nil
+}
+
+// vi
+func (s *Storage) SaveWallet(address string, wallet *network.Wallet) error {
+	data, err := json.Marshal(wallet)
+	if err != nil {
+		return err
+	}
+	fmt.Println(">> Lưu ví:", address)
+	return s.db.Put([]byte("wallet:"+address), data, nil)
+}
+
+func (s *Storage) LoadWallet(address string) (*network.Wallet, error) {
+	fmt.Println(">> Truy vấn ví:", address)
+	data, err := s.db.Get([]byte("wallet:"+address), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var w network.Wallet
+	if err := json.Unmarshal(data, &w); err != nil {
+		return nil, err
+	}
+	return &w, nil
+}
+
+func (s *Storage) LoadAllWallets() ([]*network.Wallet, error) {
+	var wallets []*network.Wallet
+
+	iter := s.db.NewIterator(nil, nil)
+	for iter.Next() {
+		key := iter.Key()
+		if !strings.HasPrefix(string(key), "wallet:") {
+			continue
+		}
+
+		var w network.Wallet
+		if err := json.Unmarshal(iter.Value(), &w); err != nil {
+			continue // bỏ qua nếu lỗi
+		}
+		wallets = append(wallets, &w)
+	}
+	iter.Release()
+	return wallets, nil
+}
+
+func (s *Storage) GetLatestBlock() (*blockchain.Block, error) {
+	hashBytes, err := s.db.Get([]byte("last_block_hash"), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	blockData, err := s.db.Get([]byte("block_"+string(hashBytes)), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var block blockchain.Block
+	if err := json.Unmarshal(blockData, &block); err != nil {
+		return nil, err
+	}
+
 	return &block, nil
 }
 

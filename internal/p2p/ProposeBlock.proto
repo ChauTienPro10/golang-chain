@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package proposal;
+
+option go_package = "blockchain/proposalpb";
+
+// Giao dịch trong block
+message Transaction {
+  string sender = 1;
+  string receiver = 2;
+  double amount = 3;
+  int64 timestamp = 4;
+  bytes signature = 5;
+}
+
+// Cấu trúc một block
+message Block {
+  int32 index = 1;
+  int64 timestamp = 2;
+  repeated Transaction transactions = 3;
+  string merkleRoot = 4;
+  string prevHash = 5;
+  int32 nonce = 6;
+  string hash = 7;
+}
+
+// Request gửi proposal từ Leader
+message ProposalRequest {
+  Block block = 1;
+  string leaderID = 2;
+}
+
+// Response từ node Follower
+message ProposalResponse {
+  string message = 1;
+  bool accepted = 2;
+}
+
+// Service để gửi Proposal
+service ProposalService {
+  rpc SendProposal(ProposalRequest) returns (ProposalResponse);
+}
