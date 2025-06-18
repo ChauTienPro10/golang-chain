@@ -19,7 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ProposalService_SendProposal_FullMethodName = "/proposal.ProposalService/SendProposal"
+	ProposalService_SendProposal_FullMethodName      = "/proposal.ProposalService/SendProposal"
+	ProposalService_CommitBlock_FullMethodName       = "/proposal.ProposalService/CommitBlock"
+	ProposalService_SyncMissingBlocks_FullMethodName = "/proposal.ProposalService/SyncMissingBlocks"
 )
 
 // ProposalServiceClient is the client API for ProposalService service.
@@ -29,6 +31,9 @@ const (
 // Service để gửi Proposal
 type ProposalServiceClient interface {
 	SendProposal(ctx context.Context, in *ProposalRequest, opts ...grpc.CallOption) (*ProposalResponse, error)
+	CommitBlock(ctx context.Context, in *CommitBlockRequest, opts ...grpc.CallOption) (*CommitBlockResponse, error)
+	// Đồng bộ block khi follower bị rớt mạng hoặc restart
+	SyncMissingBlocks(ctx context.Context, in *SyncBlocksRequest, opts ...grpc.CallOption) (*SyncBlocksResponse, error)
 }
 
 type proposalServiceClient struct {
@@ -49,6 +54,26 @@ func (c *proposalServiceClient) SendProposal(ctx context.Context, in *ProposalRe
 	return out, nil
 }
 
+func (c *proposalServiceClient) CommitBlock(ctx context.Context, in *CommitBlockRequest, opts ...grpc.CallOption) (*CommitBlockResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CommitBlockResponse)
+	err := c.cc.Invoke(ctx, ProposalService_CommitBlock_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *proposalServiceClient) SyncMissingBlocks(ctx context.Context, in *SyncBlocksRequest, opts ...grpc.CallOption) (*SyncBlocksResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SyncBlocksResponse)
+	err := c.cc.Invoke(ctx, ProposalService_SyncMissingBlocks_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProposalServiceServer is the server API for ProposalService service.
 // All implementations must embed UnimplementedProposalServiceServer
 // for forward compatibility.
@@ -56,6 +81,9 @@ func (c *proposalServiceClient) SendProposal(ctx context.Context, in *ProposalRe
 // Service để gửi Proposal
 type ProposalServiceServer interface {
 	SendProposal(context.Context, *ProposalRequest) (*ProposalResponse, error)
+	CommitBlock(context.Context, *CommitBlockRequest) (*CommitBlockResponse, error)
+	// Đồng bộ block khi follower bị rớt mạng hoặc restart
+	SyncMissingBlocks(context.Context, *SyncBlocksRequest) (*SyncBlocksResponse, error)
 	mustEmbedUnimplementedProposalServiceServer()
 }
 
@@ -68,6 +96,12 @@ type UnimplementedProposalServiceServer struct{}
 
 func (UnimplementedProposalServiceServer) SendProposal(context.Context, *ProposalRequest) (*ProposalResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendProposal not implemented")
+}
+func (UnimplementedProposalServiceServer) CommitBlock(context.Context, *CommitBlockRequest) (*CommitBlockResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CommitBlock not implemented")
+}
+func (UnimplementedProposalServiceServer) SyncMissingBlocks(context.Context, *SyncBlocksRequest) (*SyncBlocksResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SyncMissingBlocks not implemented")
 }
 func (UnimplementedProposalServiceServer) mustEmbedUnimplementedProposalServiceServer() {}
 func (UnimplementedProposalServiceServer) testEmbeddedByValue()                         {}
@@ -108,6 +142,42 @@ func _ProposalService_SendProposal_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProposalService_CommitBlock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CommitBlockRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProposalServiceServer).CommitBlock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProposalService_CommitBlock_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProposalServiceServer).CommitBlock(ctx, req.(*CommitBlockRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProposalService_SyncMissingBlocks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SyncBlocksRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProposalServiceServer).SyncMissingBlocks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProposalService_SyncMissingBlocks_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProposalServiceServer).SyncMissingBlocks(ctx, req.(*SyncBlocksRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ProposalService_ServiceDesc is the grpc.ServiceDesc for ProposalService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -118,6 +188,14 @@ var ProposalService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendProposal",
 			Handler:    _ProposalService_SendProposal_Handler,
+		},
+		{
+			MethodName: "CommitBlock",
+			Handler:    _ProposalService_CommitBlock_Handler,
+		},
+		{
+			MethodName: "SyncMissingBlocks",
+			Handler:    _ProposalService_SyncMissingBlocks_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

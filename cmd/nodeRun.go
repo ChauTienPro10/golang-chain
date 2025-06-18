@@ -31,7 +31,7 @@ func main() {
 	http.HandleFunc("/mempool", leaderHandler.GetMemPoolHandler)
 	http.HandleFunc("/leader/genBlock", leaderHandler.CreateBlockHandler)
 	http.HandleFunc("/leader/proposal", leaderHandler.SendProposal)
-
+	http.HandleFunc("/leader/syncBlock", leaderHandler.HandleSyncBlock)
 
 	commonHandler := handlers.NewCommonHandler(db)
 	http.HandleFunc("/wallet/new", commonHandler.CreateWalletHandler)

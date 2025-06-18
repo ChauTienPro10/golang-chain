@@ -9,6 +9,7 @@ import (
 
 	"github.com/chauduongphattien/golang-chain/internal/blockchain"
 	"github.com/chauduongphattien/golang-chain/pkg/storage"
+	"github.com/chauduongphattien/golang-chain/internal/p2p/utils"
 
 )
 
@@ -26,7 +27,7 @@ func (s *ProposalServer) SendProposal(ctx context.Context, req *pb.ProposalReque
 	log.Println("Nhận đề xuất block từ leader:", req.LeaderID)
 	log.Println("Block hash:", req.Block.Hash)
 
-	block := convertFromProtoBlock(req.Block)
+	block := utils.ConvertFromProtoBlock(req.Block)
 
 	log.Printf("Thông tin block nhận được:\n"+
 	"  Timestamp: %d\n"+
@@ -57,7 +58,7 @@ func (s *ProposalServer) SendProposal(ctx context.Context, req *pb.ProposalReque
 			Accepted: false,
 		}, nil
 	}
-	
+
 	if lastBlock != nil {
 		if block.PrevHash != lastBlock.Hash {
 				return &pb.ProposalResponse{
@@ -73,24 +74,47 @@ func (s *ProposalServer) SendProposal(ctx context.Context, req *pb.ProposalReque
 	}, nil
 }
 
+// cu ly commit block
+func (s *ProposalServer) CommitBlock(ctx context.Context, req *pb.CommitBlockRequest) (*pb.CommitBlockResponse, error) {
+	block := utils.ConvertFromProtoBlock(req.Block)
 
-func convertFromProtoBlock(pbBlock *pb.Block) *blockchain.Block {
-	txs := make([]blockchain.Transaction, 0)
-	for _, pbTx := range pbBlock.Transactions {
-		txs = append(txs, blockchain.Transaction{
-			Sender:    pbTx.Sender,
-			Receiver:  pbTx.Receiver,
-			Amount:    pbTx.Amount,
-			Timestamp: pbTx.Timestamp,
-			Signature: pbTx.Signature,
-		})
+	err := s.Storage.SaveBlock(block)
+	if err != nil {
+		log.Println("Lỗi khi commit block:", err)
+		return &pb.CommitBlockResponse{
+			Message: "Commit thất bại",
+			Success: false,
+		}, nil
 	}
 
-	return &blockchain.Block{
-		Timestamp:    pbBlock.Timestamp,
-		Transactions: txs, 
-		PrevHash:     pbBlock.PrevHash,
-		Hash:         pbBlock.Hash,
-		MerkleRoot:   pbBlock.MerkleRoot,
-	}
+	log.Println("Block đã được lưu vào local storage (Commit)")
+	return &pb.CommitBlockResponse{
+		Message: "Commit thành công",
+		Success: true,
+	}, nil
 }
+
+// xu ly dong bo Block
+func (s *ProposalServer) SyncMissingBlocks(ctx context.Context, req *pb.SyncBlocksRequest) (*pb.SyncBlocksResponse, error) {
+    knownHash := req.FromHash
+    var blocks []*pb.Block
+    current, err := s.Storage.GetLatestBlock()
+	log.Printf("cur block: ", current.Hash)
+	log.Printf("knownHash: ", knownHash)
+    if err != nil {
+		log.Printf("error: ", err)
+        return nil, err
+    }
+
+    for current != nil && current.Hash != knownHash {
+        protoBlk := utils.ConvertToProtoBlock(current)
+        blocks = append([]*pb.Block{protoBlk}, blocks...) // prepend để đúng thứ tự
+        current, err = s.Storage.LoadBlock(current.PrevHash)
+        if err != nil {
+            break // không tìm thấy block trước đó
+        }
+    }
+
+    return &pb.SyncBlocksResponse{Blocks: blocks}, nil
+}
+

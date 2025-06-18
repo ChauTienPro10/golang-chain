@@ -36,7 +36,30 @@ message ProposalResponse {
   bool accepted = 2;
 }
 
+// Request và response khi commit block
+message CommitBlockRequest {
+  Block block = 1;
+}
+
+message CommitBlockResponse {
+  string message = 1;
+  bool success = 2;
+}
+
+// --- Đồng bộ các block bị thiếu ---
+message SyncBlocksRequest {
+  string fromHash = 1; // Hash của block cuối cùng mà node đang có
+}
+
+message SyncBlocksResponse {
+  repeated Block blocks = 1;
+}
+
 // Service để gửi Proposal
 service ProposalService {
   rpc SendProposal(ProposalRequest) returns (ProposalResponse);
+  rpc CommitBlock(CommitBlockRequest) returns (CommitBlockResponse);
+
+   // Đồng bộ block khi follower bị rớt mạng hoặc restart
+  rpc SyncMissingBlocks(SyncBlocksRequest) returns (SyncBlocksResponse);
 }

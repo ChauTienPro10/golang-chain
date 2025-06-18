@@ -297,6 +297,192 @@ func (x *ProposalResponse) GetAccepted() bool {
 	return false
 }
 
+// Request và response khi commit block
+type CommitBlockRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Block         *Block                 `protobuf:"bytes,1,opt,name=block,proto3" json:"block,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CommitBlockRequest) Reset() {
+	*x = CommitBlockRequest{}
+	mi := &file_internal_p2p_ProposeBlock_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CommitBlockRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CommitBlockRequest) ProtoMessage() {}
+
+func (x *CommitBlockRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_p2p_ProposeBlock_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CommitBlockRequest.ProtoReflect.Descriptor instead.
+func (*CommitBlockRequest) Descriptor() ([]byte, []int) {
+	return file_internal_p2p_ProposeBlock_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *CommitBlockRequest) GetBlock() *Block {
+	if x != nil {
+		return x.Block
+	}
+	return nil
+}
+
+type CommitBlockResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	Success       bool                   `protobuf:"varint,2,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CommitBlockResponse) Reset() {
+	*x = CommitBlockResponse{}
+	mi := &file_internal_p2p_ProposeBlock_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CommitBlockResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CommitBlockResponse) ProtoMessage() {}
+
+func (x *CommitBlockResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_p2p_ProposeBlock_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CommitBlockResponse.ProtoReflect.Descriptor instead.
+func (*CommitBlockResponse) Descriptor() ([]byte, []int) {
+	return file_internal_p2p_ProposeBlock_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *CommitBlockResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *CommitBlockResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+// --- Đồng bộ các block bị thiếu ---
+type SyncBlocksRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FromHash      string                 `protobuf:"bytes,1,opt,name=fromHash,proto3" json:"fromHash,omitempty"` // Hash của block cuối cùng mà node đang có
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SyncBlocksRequest) Reset() {
+	*x = SyncBlocksRequest{}
+	mi := &file_internal_p2p_ProposeBlock_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SyncBlocksRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncBlocksRequest) ProtoMessage() {}
+
+func (x *SyncBlocksRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_p2p_ProposeBlock_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SyncBlocksRequest.ProtoReflect.Descriptor instead.
+func (*SyncBlocksRequest) Descriptor() ([]byte, []int) {
+	return file_internal_p2p_ProposeBlock_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *SyncBlocksRequest) GetFromHash() string {
+	if x != nil {
+		return x.FromHash
+	}
+	return ""
+}
+
+type SyncBlocksResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Blocks        []*Block               `protobuf:"bytes,1,rep,name=blocks,proto3" json:"blocks,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SyncBlocksResponse) Reset() {
+	*x = SyncBlocksResponse{}
+	mi := &file_internal_p2p_ProposeBlock_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SyncBlocksResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncBlocksResponse) ProtoMessage() {}
+
+func (x *SyncBlocksResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_p2p_ProposeBlock_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SyncBlocksResponse.ProtoReflect.Descriptor instead.
+func (*SyncBlocksResponse) Descriptor() ([]byte, []int) {
+	return file_internal_p2p_ProposeBlock_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *SyncBlocksResponse) GetBlocks() []*Block {
+	if x != nil {
+		return x.Blocks
+	}
+	return nil
+}
+
 var File_internal_p2p_ProposeBlock_proto protoreflect.FileDescriptor
 
 const file_internal_p2p_ProposeBlock_proto_rawDesc = "" +
@@ -323,9 +509,20 @@ const file_internal_p2p_ProposeBlock_proto_rawDesc = "" +
 	"\bleaderID\x18\x02 \x01(\tR\bleaderID\"H\n" +
 	"\x10ProposalResponse\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12\x1a\n" +
-	"\baccepted\x18\x02 \x01(\bR\baccepted2X\n" +
+	"\baccepted\x18\x02 \x01(\bR\baccepted\";\n" +
+	"\x12CommitBlockRequest\x12%\n" +
+	"\x05block\x18\x01 \x01(\v2\x0f.proposal.BlockR\x05block\"I\n" +
+	"\x13CommitBlockResponse\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\x12\x18\n" +
+	"\asuccess\x18\x02 \x01(\bR\asuccess\"/\n" +
+	"\x11SyncBlocksRequest\x12\x1a\n" +
+	"\bfromHash\x18\x01 \x01(\tR\bfromHash\"=\n" +
+	"\x12SyncBlocksResponse\x12'\n" +
+	"\x06blocks\x18\x01 \x03(\v2\x0f.proposal.BlockR\x06blocks2\xf4\x01\n" +
 	"\x0fProposalService\x12E\n" +
-	"\fSendProposal\x12\x19.proposal.ProposalRequest\x1a\x1a.proposal.ProposalResponseB\x17Z\x15blockchain/proposalpbb\x06proto3"
+	"\fSendProposal\x12\x19.proposal.ProposalRequest\x1a\x1a.proposal.ProposalResponse\x12J\n" +
+	"\vCommitBlock\x12\x1c.proposal.CommitBlockRequest\x1a\x1d.proposal.CommitBlockResponse\x12N\n" +
+	"\x11SyncMissingBlocks\x12\x1b.proposal.SyncBlocksRequest\x1a\x1c.proposal.SyncBlocksResponseB\x17Z\x15blockchain/proposalpbb\x06proto3"
 
 var (
 	file_internal_p2p_ProposeBlock_proto_rawDescOnce sync.Once
@@ -339,23 +536,33 @@ func file_internal_p2p_ProposeBlock_proto_rawDescGZIP() []byte {
 	return file_internal_p2p_ProposeBlock_proto_rawDescData
 }
 
-var file_internal_p2p_ProposeBlock_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_internal_p2p_ProposeBlock_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_internal_p2p_ProposeBlock_proto_goTypes = []any{
-	(*Transaction)(nil),      // 0: proposal.Transaction
-	(*Block)(nil),            // 1: proposal.Block
-	(*ProposalRequest)(nil),  // 2: proposal.ProposalRequest
-	(*ProposalResponse)(nil), // 3: proposal.ProposalResponse
+	(*Transaction)(nil),         // 0: proposal.Transaction
+	(*Block)(nil),               // 1: proposal.Block
+	(*ProposalRequest)(nil),     // 2: proposal.ProposalRequest
+	(*ProposalResponse)(nil),    // 3: proposal.ProposalResponse
+	(*CommitBlockRequest)(nil),  // 4: proposal.CommitBlockRequest
+	(*CommitBlockResponse)(nil), // 5: proposal.CommitBlockResponse
+	(*SyncBlocksRequest)(nil),   // 6: proposal.SyncBlocksRequest
+	(*SyncBlocksResponse)(nil),  // 7: proposal.SyncBlocksResponse
 }
 var file_internal_p2p_ProposeBlock_proto_depIdxs = []int32{
 	0, // 0: proposal.Block.transactions:type_name -> proposal.Transaction
 	1, // 1: proposal.ProposalRequest.block:type_name -> proposal.Block
-	2, // 2: proposal.ProposalService.SendProposal:input_type -> proposal.ProposalRequest
-	3, // 3: proposal.ProposalService.SendProposal:output_type -> proposal.ProposalResponse
-	3, // [3:4] is the sub-list for method output_type
-	2, // [2:3] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	1, // 2: proposal.CommitBlockRequest.block:type_name -> proposal.Block
+	1, // 3: proposal.SyncBlocksResponse.blocks:type_name -> proposal.Block
+	2, // 4: proposal.ProposalService.SendProposal:input_type -> proposal.ProposalRequest
+	4, // 5: proposal.ProposalService.CommitBlock:input_type -> proposal.CommitBlockRequest
+	6, // 6: proposal.ProposalService.SyncMissingBlocks:input_type -> proposal.SyncBlocksRequest
+	3, // 7: proposal.ProposalService.SendProposal:output_type -> proposal.ProposalResponse
+	5, // 8: proposal.ProposalService.CommitBlock:output_type -> proposal.CommitBlockResponse
+	7, // 9: proposal.ProposalService.SyncMissingBlocks:output_type -> proposal.SyncBlocksResponse
+	7, // [7:10] is the sub-list for method output_type
+	4, // [4:7] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_internal_p2p_ProposeBlock_proto_init() }
@@ -369,7 +576,7 @@ func file_internal_p2p_ProposeBlock_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_p2p_ProposeBlock_proto_rawDesc), len(file_internal_p2p_ProposeBlock_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
