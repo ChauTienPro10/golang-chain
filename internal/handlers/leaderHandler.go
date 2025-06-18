@@ -1,17 +1,18 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
-	"io"
 	"net/http"
 	"sync"
 	"time"
+	"log"
 
 	"github.com/chauduongphattien/golang-chain/internal/blockchain"
 	"github.com/chauduongphattien/golang-chain/internal/network"
 	"github.com/chauduongphattien/golang-chain/pkg/storage"
+
+	"github.com/chauduongphattien/golang-chain/internal/p2p/grpcclient"
+	pb "github.com/chauduongphattien/golang-chain/blockchain/proposalpb"
 )
 
 type VoteRequest struct {
@@ -26,6 +27,7 @@ type LeaderHandler struct {
 	voteMu      sync.Mutex
 	totalVotes  int
 	pendingBlk  *blockchain.Block
+	followerAddrs []string
 }
 
 func NewLeaderHandler(storage *storage.Storage) *LeaderHandler {
@@ -33,6 +35,7 @@ func NewLeaderHandler(storage *storage.Storage) *LeaderHandler {
 		memPool:     []blockchain.Transaction{},
 		storageInst: storage,
 		voteCount:   0,
+		followerAddrs: []string{"localhost:50051", "localhost:50052"},
 	}
 }
 
@@ -167,43 +170,61 @@ func (h *LeaderHandler) CreateBlockHandler(w http.ResponseWriter, r *http.Reques
 	json.NewEncoder(w).Encode(newBlock)
 }
 
-func (h *LeaderHandler) CreateBlock() {
-
-}
-
-var validatorNodes = []string{
-	"http://localhost:8081/proposal",
-	"http://localhost:8082/proposal",
-}
-
-func (h *LeaderHandler) ProposeBlock() {
-	proposal := ProposalRequest{
-		Block:    h.pendingBlk,
-		LeaderID: "leader-node-1",
+func (h *LeaderHandler) SendProposal(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Chỉ hỗ trợ POST", http.StatusMethodNotAllowed)
+		return
 	}
 
-	for _, nodeURL := range validatorNodes {
-		go func(url string) {
-			data, err := json.Marshal(proposal)
+	if h.pendingBlk == nil {
+		return
+	}
+
+	h.GenProposeBlock(h.pendingBlk, h.followerAddrs)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Đã gửi proposal đến các follower"))
+}
+
+
+func (h *LeaderHandler) GenProposeBlock(b *blockchain.Block, followerAddrs []string) {
+	protoBlock := convertToProtoBlock(b)
+
+	req := &pb.ProposalRequest{
+		Block:    protoBlock,
+		LeaderID: "leader-1", // Có thể thay đổi theo cấu hình hoặc ID thật sự của leader
+	}
+
+	for _, addr := range followerAddrs {
+		go func(address string) {
+			resp, err := grpcclient.SendProposalToFollower(address, req)
 			if err != nil {
-				fmt.Println("Lỗi khi mã hóa proposal:", err)
+				log.Printf("Gửi proposal đến %s thất bại: %v\n", address, err)
 				return
 			}
+			log.Printf("Follower %s phản hồi: %s (accepted: %v)\n", address, resp.Message, resp.Accepted)
+		}(addr)
+	}
+}
 
-			resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
-			if err != nil {
-				fmt.Printf("Gửi proposal tới %s thất bại: %v\n", url, err)
-				return
-			}
-			defer resp.Body.Close()
+func convertToProtoBlock(b *blockchain.Block) *pb.Block {
+	var txs []*pb.Transaction
+	for _, t := range b.Transactions {
+		txs = append(txs, &pb.Transaction{
+			Sender:    t.Sender,
+			Receiver:  t.Receiver,
+			Amount:    t.Amount,
+			Timestamp: t.Timestamp,
+			Signature: t.Signature,
+		})
+	}
 
-			if resp.StatusCode != http.StatusOK {
-				body, _ := io.ReadAll(resp.Body)
-				fmt.Printf("Node %s từ chối proposal: %s\n", url, string(body))
-			} else {
-				fmt.Printf("Proposal gửi thành công tới %s\n", url)
-			}
-		}(nodeURL)
+	return &pb.Block{
+		Timestamp:    b.Timestamp,
+		Transactions: txs,
+		MerkleRoot:   b.MerkleRoot,
+		PrevHash:     b.PrevHash,
+		Nonce:        int32(b.Nonce),
+		Hash:         b.Hash,
 	}
 }
 

@@ -4,9 +4,16 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"net"
+	"log"
 
 	"github.com/chauduongphattien/golang-chain/internal/handlers"
 	"github.com/chauduongphattien/golang-chain/pkg/storage"
+	"google.golang.org/grpc"
+
+	pb "github.com/chauduongphattien/golang-chain/blockchain/proposalpb"
+	"github.com/chauduongphattien/golang-chain/internal/p2p/service"
+
 )
 
 func main() {
@@ -23,14 +30,33 @@ func main() {
 	http.HandleFunc("/leader/transaction", leaderHandler.HandleTransaction)
 	http.HandleFunc("/mempool", leaderHandler.GetMemPoolHandler)
 	http.HandleFunc("/leader/genBlock", leaderHandler.CreateBlockHandler)
+	http.HandleFunc("/leader/proposal", leaderHandler.SendProposal)
+
 
 	commonHandler := handlers.NewCommonHandler(db)
 	http.HandleFunc("/wallet/new", commonHandler.CreateWalletHandler)
 	http.HandleFunc("/wallet/get", commonHandler.GetWalletHandler)
 	http.HandleFunc("/wallet/getAll", commonHandler.GetAllWalletsHandler)
 
+	go func() {
+		lis, err := net.Listen("tcp", ":50051")
+		if err != nil {
+			log.Fatalf("Không thể lắng nghe: %v", err)
+		}
+
+		grpcServer := grpc.NewServer()
+		proposalServer := service.NewProposalServer(db)
+		pb.RegisterProposalServiceServer(grpcServer, proposalServer)
+
+		log.Println("Follower đang lắng nghe ở :50051")
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Fatalf("Lỗi khi chạy gRPC server: %v", err)
+		}
+	}()
+
 	fmt.Printf("Server running at http://localhost:%s\n", port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		fmt.Println("Server error:", err)
 	}
 }
+
