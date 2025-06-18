@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  leader:
+    build: .
+    container_name: leader
+    environment:
+      - PORT=8080
+      - TCP_PORT=50050
+      - FOLLOWERS=follower1:50051,follower2:50052
+    ports:
+      - "8080:8080"
+
+  follower1:
+    build: .
+    container_name: follower1
+    environment:
+      - PORT=8081
+      - TCP_PORT=50051
+      - LEADER=leader:50050
+    ports:
+      - "8081:8081"
+      - "50051:50051"
+
+  follower2:
+    build: .
+    container_name: follower2
+    environment:
+      - PORT=8082
+      - TCP_PORT=50052
+      - LEADER=leader:50050
+    ports:
+      - "8082:8082"
+      - "50052:50052"

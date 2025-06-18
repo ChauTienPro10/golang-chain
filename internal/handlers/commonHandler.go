@@ -112,3 +112,17 @@ func (h *CommonHandler) GetAllWalletsHandler(w http.ResponseWriter, r *http.Requ
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(wallets)
 }
+
+func (h *CommonHandler) GetLastBlock(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Chỉ hỗ trợ GET", http.StatusMethodNotAllowed)
+		return
+	}
+	block, err := h.storageInst.GetLatestBlock()
+	if err != nil {
+		http.Error(w, "Khong tai duoc lastes block", http.StatusNoContent)
+		return
+	}
+
+	json.NewEncoder(w).Encode(block)
+}

@@ -2,22 +2,20 @@ package handlers
 
 import (
 	"encoding/json"
-	"net/http"
-	"sync"
-	"time"
 	"log"
+	"net/http"
 	"os"
 	"strings"
-	"fmt"
+	"sync"
+	"time"
 
 	"github.com/chauduongphattien/golang-chain/internal/blockchain"
 	"github.com/chauduongphattien/golang-chain/internal/network"
-	"github.com/chauduongphattien/golang-chain/pkg/storage"
 	"github.com/chauduongphattien/golang-chain/internal/p2p/utils"
+	"github.com/chauduongphattien/golang-chain/pkg/storage"
 
-	"github.com/chauduongphattien/golang-chain/internal/p2p/grpcclient"
 	pb "github.com/chauduongphattien/golang-chain/blockchain/proposalpb"
-	
+	"github.com/chauduongphattien/golang-chain/internal/p2p/grpcclient"
 )
 
 type VoteRequest struct {
@@ -26,20 +24,20 @@ type VoteRequest struct {
 }
 
 type LeaderHandler struct {
-	memPool     []blockchain.Transaction
-	storageInst *storage.Storage
-	voteCount   int
-	voteMu      sync.Mutex
-	totalVotes  int
-	pendingBlk  *blockchain.Block
+	memPool       []blockchain.Transaction
+	storageInst   *storage.Storage
+	voteCount     int
+	voteMu        sync.Mutex
+	totalVotes    int
+	pendingBlk    *blockchain.Block
 	followerAddrs []string
 }
 
 func NewLeaderHandler(storage *storage.Storage) *LeaderHandler {
 	return &LeaderHandler{
-		memPool:     []blockchain.Transaction{},
-		storageInst: storage,
-		voteCount:   0,
+		memPool:       []blockchain.Transaction{},
+		storageInst:   storage,
+		voteCount:     0,
 		followerAddrs: getFollowerAddrs(),
 	}
 }
@@ -47,7 +45,7 @@ func NewLeaderHandler(storage *storage.Storage) *LeaderHandler {
 func getFollowerAddrs() []string {
 	raw := os.Getenv("FOLLOWERS")
 	if raw == "" {
-		return []string{} 
+		raw = "follower1:50051,follower1:50052"
 	}
 	return strings.Split(raw, ",")
 }
@@ -63,9 +61,9 @@ func (h *LeaderHandler) Hello(w http.ResponseWriter, r *http.Request) {
 }
 
 type TransRequest struct {
-	Sender   string `json:"sender"`   
-	Receiver string `json:"receiver"` 
-	Amount   int    `json:"amount"`   
+	Sender   string `json:"sender"`
+	Receiver string `json:"receiver"`
+	Amount   int    `json:"amount"`
 }
 
 func (h *LeaderHandler) GetMemPoolHandler(w http.ResponseWriter, r *http.Request) {
@@ -142,7 +140,7 @@ func (h *LeaderHandler) HandleTransaction(w http.ResponseWriter, r *http.Request
 }
 
 type ProposalRequest struct {
-	Block    *blockchain.Block `json:"block"`     
+	Block    *blockchain.Block `json:"block"`
 	LeaderID string            `json:"leader_id"`
 }
 
@@ -194,9 +192,9 @@ func (h *LeaderHandler) GenProposeBlock(b *blockchain.Block, followerAddrs []str
 
 	req := &pb.ProposalRequest{
 		Block:    protoBlock,
-		LeaderID: "leader-1", 
+		LeaderID: "leader-1",
 	}
-	var wg sync.WaitGroup 
+	var wg sync.WaitGroup
 	for _, addr := range followerAddrs {
 		wg.Add(1)
 
@@ -212,21 +210,25 @@ func (h *LeaderHandler) GenProposeBlock(b *blockchain.Block, followerAddrs []str
 				h.voteMu.Lock()
 				h.voteCount++
 				h.voteMu.Unlock()
-			}	
+			}
 		}(addr)
 	}
-	
+
 	wg.Wait()
 
 	log.Printf("Số phiếu đồng thuận nhận được: %d\n", h.voteCount)
 
-	if h.voteCount >= 1 {
+	if h.voteCount >= 2 {
 		log.Println("Đủ phiếu, tiến hành gửi commit đến follower")
 
 		commitReq := &pb.CommitBlockRequest{
 			Block: protoBlock,
 		}
-
+		errSaveBlk := h.storageInst.SaveBlock(b)
+		if errSaveBlk != nil {
+			log.Printf("save block ở leader thất bại")
+			return
+		}
 		for _, addr := range followerAddrs {
 			wg.Add(1)
 			go func(address string) {
@@ -243,37 +245,5 @@ func (h *LeaderHandler) GenProposeBlock(b *blockchain.Block, followerAddrs []str
 	} else {
 		log.Println("Không đủ phiếu, không gửi commit")
 	}
-	
-}
 
-func (h *LeaderHandler) HandleSyncBlock(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Chỉ hỗ trợ POST", http.StatusMethodNotAllowed)
-		return
-	}
-
-	var req struct {
-		LeaderAddr string `json:"leaderAddr"`
-	}
-
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		http.Error(w, "Lỗi đọc JSON request body", http.StatusBadRequest)
-		return
-	}
-
-	lastBlock, err := h.storageInst.GetLatestBlock()
-
-	blocks, err := grpcclient.SyncFromLeader(req.LeaderAddr, lastBlock.Hash)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Lỗi đồng bộ từ leader: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(blocks)
-	if err != nil {
-		http.Error(w, "Lỗi encode kết quả", http.StatusInternalServerError)
-		return
-	}
 }
